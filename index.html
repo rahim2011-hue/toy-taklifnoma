@@ -16,7 +16,7 @@
     h1 { color: #8b5a2b; font-size: 2.2rem; margin-bottom: 10px; }
     
     .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .lang-btn, .music-btn { padding: 8px 15px; border: none; background: #8b5a2b; color: #fff; border-radius: 20px; cursor: pointer; font-weight: bold; }
+    .lang-btn { padding: 8px 15px; border: none; background: #8b5a2b; color: #fff; border-radius: 20px; cursor: pointer; font-weight: bold; }
     
     .timer { display: flex; justify-content: space-around; background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin: 20px 0; }
     .timer-item span { display: block; font-size: 1.5rem; font-weight: bold; color: #8b5a2b; }
@@ -37,6 +37,8 @@
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 2000; }
     .modal-content { background: #fff; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; max-height: 85vh; overflow-y: auto; text-align: left; }
     .close-btn { float: right; cursor: pointer; font-size: 1.5rem; font-weight: bold; }
+
+    .media-frame { width: 100%; height: 210px; border: none; border-radius: 10px; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -46,14 +48,9 @@
     <button class="open-btn" onclick="startSite()">✉️ Taklifnomani Ochish</button>
   </div>
 
-  <audio id="bg-music" loop>
-    <source id="music-source" src="" type="audio/mpeg">
-  </audio>
-
   <div class="container" id="main-container">
     <div class="top-bar">
       <button class="lang-btn" onclick="toggleLang()" id="lang-btn">RU</button>
-      <button class="music-btn" onclick="toggleMusic()" id="music-btn">🔊 Musiqa: O'chirish</button>
     </div>
 
     <header>
@@ -67,6 +64,11 @@
       <div class="timer-item"><span id="hours">0</span><label id="lbl-hours">Soat</label></div>
       <div class="timer-item"><span id="minutes">0</span><label id="lbl-min">Daqiqa</label></div>
       <div class="timer-item"><span id="seconds">0</span><label id="lbl-sec">Soniya</label></div>
+    </div>
+
+    <div class="card">
+      <h2 id="title-music">🎵 Musiqa</h2>
+      <iframe id="youtube-player" class="media-frame" src="" allow="autoplay; encrypted-media"></iframe>
     </div>
 
     <div class="card">
@@ -84,7 +86,7 @@
     <div class="card">
       <h2 id="title-location">To'yxona Manzili</h2>
       <p id="venue-name" style="text-align: center; margin-bottom: 10px; font-weight: bold;">"Versal" To'yxonasi</p>
-      <a id="map-link" href="https://maps.google.com" target="_blank" class="btn">🗺️ Xaritada Ko'rish</a>
+      <a id="map-link" href="#" target="_blank" class="btn">🗺️ Xaritaning o'ziga o'tish</a>
     </div>
 
     <div class="card">
@@ -115,7 +117,6 @@
     <p style="font-size: 0.8rem; color: #aaa; margin-top: 30px; cursor: pointer;" onclick="openAdminModal()">⚙️ Admin Panel</p>
   </div>
 
-  <!-- Admin Panel -->
   <div class="modal" id="admin-modal">
     <div class="modal-content">
       <span class="close-btn" onclick="closeAdminModal()">&times;</span>
@@ -136,13 +137,13 @@
         <label>To'yxona nomi:</label>
         <input type="text" id="edit-venue" style="width:100%; padding:5px; margin-bottom:10px;">
 
-        <label>Xarita havolasi (URL):</label>
+        <label>Xarita havolasi (Google Maps URL):</label>
         <input type="text" id="edit-map" style="width:100%; padding:5px; margin-bottom:10px;">
 
         <label>Karta raqami:</label>
         <input type="text" id="edit-card" style="width:100%; padding:5px; margin-bottom:10px;">
 
-        <label>Musiqa havolasi (.mp3 URL):</label>
+        <label>YouTube Video Havolasi (URL):</label>
         <input type="text" id="edit-music" style="width:100%; padding:5px; margin-bottom:10px;">
 
         <hr style="margin: 15px 0;">
@@ -159,7 +160,6 @@
 
   <script>
     let currentLang = 'UZ';
-    let isPlaying = false;
     let weddingDate;
 
     let defaultData = {
@@ -168,12 +168,22 @@
       venue: '"Versal" To\'yxonasi',
       mapUrl: "https://maps.google.com",
       card: "4916 9903 5334 8904",
-      musicUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+      musicUrl: "https://youtu.be/6z27RS6xJF4",
       botToken: "8762156038:AAHChOiwXL_AaUGFSli0Aau8riwOoV-zNs0",
       chatId: "6682139161"
     };
 
     let siteData = JSON.parse(localStorage.getItem('weddingSiteData')) || defaultData;
+
+    function cleanYouTubeUrl(url) {
+      if(!url) return "";
+      let regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      let match = url.match(regExp);
+      if (match && match[2].length === 11) {
+        return "https://www.youtube.com/embed/" + match[2] + "?autoplay=1";
+      }
+      return url;
+    }
 
     function initData() {
       document.getElementById('couple-names').innerText = siteData.names || defaultData.names;
@@ -181,10 +191,9 @@
       document.getElementById('venue-name').innerText = siteData.venue || defaultData.venue;
       document.getElementById('map-link').href = siteData.mapUrl || defaultData.mapUrl;
       document.getElementById('card-number').innerText = siteData.card || defaultData.card;
-      document.getElementById('music-source').src = siteData.musicUrl || defaultData.musicUrl;
       
-      const audio = document.getElementById("bg-music");
-      audio.load();
+      let ytEmbed = cleanYouTubeUrl(siteData.musicUrl || defaultData.musicUrl);
+      document.getElementById('youtube-player').src = ytEmbed;
 
       weddingDate = new Date((siteData.dateStr || defaultData.dateStr) + "T18:00:00").getTime();
     }
@@ -193,8 +202,6 @@
     function startSite() {
       document.getElementById('welcome-overlay').style.display = 'none';
       document.getElementById('main-container').style.display = 'block';
-      const audio = document.getElementById("bg-music");
-      audio.play().then(() => { isPlaying = true; }).catch(e => console.log(e));
     }
 
     setInterval(function() {
@@ -208,19 +215,6 @@
       }
     }, 1000);
 
-    function toggleMusic() {
-      const audio = document.getElementById("bg-music");
-      const btn = document.getElementById("music-btn");
-      if (isPlaying) {
-        audio.pause();
-        btn.innerText = currentLang === 'UZ' ? "🎵 Musiqa: Yoqish" : "🎵 Музыка: Вкл";
-      } else {
-        audio.play();
-        btn.innerText = currentLang === 'UZ' ? "🔇 Musiqa: O'chirish" : "🔇 Музыка: Выкл";
-      }
-      isPlaying = !isPlaying;
-    }
-
     function toggleLang() {
       currentLang = currentLang === 'UZ' ? 'RU' : 'UZ';
       document.getElementById('lang-btn').innerText = currentLang === 'UZ' ? 'RU' : 'UZ';
@@ -230,11 +224,12 @@
         document.getElementById('lbl-hours').innerText = "Часов";
         document.getElementById('lbl-min').innerText = "Минут";
         document.getElementById('lbl-sec').innerText = "Секунд";
+        document.getElementById('title-music').innerText = "🎵 Музыка";
         document.getElementById('title-program').innerText = "Программа Мероприятия";
         document.getElementById('desc-1').innerText = "Утренний плов";
         document.getElementById('desc-2').innerText = "Торжественный вечер";
         document.getElementById('title-location').innerText = "Место Проведения";
-        document.getElementById('map-link').innerText = "🗺️ Посмотреть на карте";
+        document.getElementById('map-link').innerText = "🗺️ Перейти к карте";
         document.getElementById('title-rsvp').innerText = "Подтвердите Присутствие";
         document.getElementById('lbl-name').innerText = "Ваше имя:";
         document.getElementById('lbl-status').innerText = "Сможете ли прийти?";
@@ -250,11 +245,12 @@
         document.getElementById('lbl-hours').innerText = "Soat";
         document.getElementById('lbl-min').innerText = "Daqiqa";
         document.getElementById('lbl-sec').innerText = "Soniya";
+        document.getElementById('title-music').innerText = "🎵 Musiqa";
         document.getElementById('title-program').innerText = "Tadbirlar Dasturi";
         document.getElementById('desc-1').innerText = "Nahor oshi marosimi";
         document.getElementById('desc-2').innerText = "Tantanali kechki to'y marosimi";
         document.getElementById('title-location').innerText = "To'yxona Manzili";
-        document.getElementById('map-link').innerText = "🗺️ Xaritada Ko'rish";
+        document.getElementById('map-link').innerText = "🗺️ Xaritaning o'ziga o'tish";
         document.getElementById('title-rsvp').innerText = "Tashrifingizni Tasdiqlang";
         document.getElementById('lbl-name').innerText = "Ismingiz:";
         document.getElementById('lbl-status').innerText = "Kelishingizni tasdiqlaysizmi?";
