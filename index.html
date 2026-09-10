@@ -29,7 +29,6 @@
     .time { font-weight: bold; color: #8b5a2b; }
 
     .btn { display: block; width: 100%; padding: 12px; background: #8b5a2b; color: #fff; text-decoration: none; border: none; border-radius: 8px; margin: 10px 0; font-size: 1rem; cursor: pointer; text-align: center; font-weight: bold; }
-    .btn-secondary { background: #5a8b5a; }
     
     .form-group { margin-bottom: 15px; text-align: left; }
     .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
@@ -48,7 +47,7 @@
   </div>
 
   <audio id="bg-music" loop>
-    <source id="music-source" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+    <source id="music-source" src="" type="audio/mpeg">
   </audio>
 
   <div class="container" id="main-container">
@@ -59,8 +58,8 @@
 
     <header>
       <p id="invitation-text">Sizni taklif qilamiz!</p>
-      <h1 id="couple-names">Ali & Valida</h1>
-      <p id="wedding-date-str">2026-10-15</p>
+      <h1 id="couple-names">Dilmurod va ...</h1>
+      <p id="wedding-date-str">2026-11-21</p>
     </header>
 
     <div class="timer">
@@ -109,7 +108,7 @@
     <div class="card">
       <h2 id="title-gift">To'y Xadya / Pul O'tkazmasi</h2>
       <p style="text-align: center; margin-bottom: 10px;" id="desc-gift">Kuyov va Kelinni qutlash uchun karta raqam:</p>
-      <p id="card-number" style="font-size: 1.2rem; font-weight: bold; text-align: center; color: #8b5a2b;">8600 0000 0000 0000</p>
+      <p id="card-number" style="font-size: 1.2rem; font-weight: bold; text-align: center; color: #8b5a2b;">4916 9903 5334 8904</p>
       <button class="btn" onclick="copyCard()" id="btn-copy">📋 Karta Raqamidan Nusxa Olish</button>
     </div>
 
@@ -148,10 +147,10 @@
 
         <hr style="margin: 15px 0;">
         <label>Telegram Bot Token:</label>
-        <input type="text" id="edit-bot-token" placeholder="BotFather bergan Token" style="width:100%; padding:5px; margin-bottom:10px;">
+        <input type="text" id="edit-bot-token" style="width:100%; padding:5px; margin-bottom:10px;">
 
         <label>Telegram Chat ID:</label>
-        <input type="text" id="edit-chat-id" placeholder="UserinfoBot bergan ID" style="width:100%; padding:5px; margin-bottom:10px;">
+        <input type="text" id="edit-chat-id" style="width:100%; padding:5px; margin-bottom:10px;">
 
         <button class="btn" onclick="saveAdminSettings()">Saqlash</button>
       </div>
@@ -163,25 +162,31 @@
     let isPlaying = false;
     let weddingDate;
 
-    let siteData = JSON.parse(localStorage.getItem('weddingSiteData')) || {
-      names: "Ali & Valida",
-      dateStr: "2026-10-15",
+    let defaultData = {
+      names: "Dilmurod va ...",
+      dateStr: "2026-11-21",
       venue: '"Versal" To\'yxonasi',
       mapUrl: "https://maps.google.com",
-      card: "8600 0000 0000 0000",
+      card: "4916 9903 5334 8904",
       musicUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-      botToken: "",
-      chatId: ""
+      botToken: "8762156038:AAHChOiwXL_AaUGFSli0Aau8riwOoV-zNs0",
+      chatId: "6682139161"
     };
 
+    let siteData = JSON.parse(localStorage.getItem('weddingSiteData')) || defaultData;
+
     function initData() {
-      document.getElementById('couple-names').innerText = siteData.names;
-      document.getElementById('wedding-date-str').innerText = siteData.dateStr;
-      document.getElementById('venue-name').innerText = siteData.venue;
-      document.getElementById('map-link').href = siteData.mapUrl;
-      document.getElementById('card-number').innerText = siteData.card;
-      document.getElementById('music-source').src = siteData.musicUrl;
-      weddingDate = new Date(siteData.dateStr + "T18:00:00").getTime();
+      document.getElementById('couple-names').innerText = siteData.names || defaultData.names;
+      document.getElementById('wedding-date-str').innerText = siteData.dateStr || defaultData.dateStr;
+      document.getElementById('venue-name').innerText = siteData.venue || defaultData.venue;
+      document.getElementById('map-link').href = siteData.mapUrl || defaultData.mapUrl;
+      document.getElementById('card-number').innerText = siteData.card || defaultData.card;
+      document.getElementById('music-source').src = siteData.musicUrl || defaultData.musicUrl;
+      
+      const audio = document.getElementById("bg-music");
+      audio.load();
+
+      weddingDate = new Date((siteData.dateStr || defaultData.dateStr) + "T18:00:00").getTime();
     }
     initData();
 
@@ -273,13 +278,11 @@
       const name = document.getElementById('guest-name').value;
       const status = document.getElementById('guest-status').value;
 
-      if (!siteData.botToken || !siteData.chatId) {
-        alert("Admin panelida Telegram Bot Token va Chat ID sozlanmagan!");
-        return;
-      }
+      const token = siteData.botToken || defaultData.botToken;
+      const chat = siteData.chatId || defaultData.chatId;
 
       const text = `📬 **Yangi RSVP Javobi!**\n\n👤 **Mehmon:** ${name}\n❓ **Javob:** ${status}`;
-      const url = `https://api.telegram.org/bot${siteData.botToken}/sendMessage?chat_id=${siteData.chatId}&text=${encodeURIComponent(text)}&parse_mode=Markdown`;
+      const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chat}&text=${encodeURIComponent(text)}&parse_mode=Markdown`;
 
       fetch(url)
         .then(res => res.json())
@@ -291,9 +294,7 @@
             alert("Xatolik yuz berdi. Bot sozlamalarini tekshiring.");
           }
         })
-        .catch(err => {
-          alert("Xabar yuborishda xatolik bo'ldi.");
-        });
+        .catch(err => alert("Xabar yuborishda xatolik bo'ldi."));
     }
 
     function openAdminModal() { document.getElementById('admin-modal').style.display = 'flex'; }
@@ -303,14 +304,14 @@
       if (document.getElementById('admin-pass-input').value === "1234") {
         document.getElementById('admin-login-sec').style.display = 'none';
         document.getElementById('admin-controls-sec').style.display = 'block';
-        document.getElementById('edit-names').value = siteData.names;
-        document.getElementById('edit-date').value = siteData.dateStr;
-        document.getElementById('edit-venue').value = siteData.venue;
-        document.getElementById('edit-map').value = siteData.mapUrl;
-        document.getElementById('edit-card').value = siteData.card;
-        document.getElementById('edit-music').value = siteData.musicUrl;
-        document.getElementById('edit-bot-token').value = siteData.botToken || '';
-        document.getElementById('edit-chat-id').value = siteData.chatId || '';
+        document.getElementById('edit-names').value = siteData.names || defaultData.names;
+        document.getElementById('edit-date').value = siteData.dateStr || defaultData.dateStr;
+        document.getElementById('edit-venue').value = siteData.venue || defaultData.venue;
+        document.getElementById('edit-map').value = siteData.mapUrl || defaultData.mapUrl;
+        document.getElementById('edit-card').value = siteData.card || defaultData.card;
+        document.getElementById('edit-music').value = siteData.musicUrl || defaultData.musicUrl;
+        document.getElementById('edit-bot-token').value = siteData.botToken || defaultData.botToken;
+        document.getElementById('edit-chat-id').value = siteData.chatId || defaultData.chatId;
       } else {
         alert("Noto'g'ri parol!");
       }
